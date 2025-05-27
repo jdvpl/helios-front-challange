@@ -1,7 +1,5 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    env:
-      - NEXT_PUBLIC_BACKEND_URL
     args:
       [
         "build",
@@ -10,17 +8,16 @@ steps:
         "-f",
         "dockerfile.prod",
         "--build-arg",
-        "NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}",
+        "NEXT_PUBLIC_BACKEND_URL",
         "--platform=linux/amd64",
-        ".",
+        "."
       ]
 
   - name: "gcr.io/cloud-builders/docker"
-    args:
-      [
-        "push",
-        "us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend",
-      ]
+    args: [
+      "push",
+      "us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend"
+    ]
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
@@ -33,12 +30,8 @@ steps:
         "--region=us-central1",
         "--platform=managed",
         "--allow-unauthenticated",
-        "--update-secrets=NEXT_PUBLIC_BACKEND_URL=NEXT_PUBLIC_BACKEND_URL:latest",
+        "--update-secrets=NEXT_PUBLIC_BACKEND_URL=NEXT_PUBLIC_BACKEND_URL:latest"
       ]
-
-secrets:
-  - secretEnv:
-      NEXT_PUBLIC_BACKEND_URL: NEXT_PUBLIC_BACKEND_URL
 
 options:
   logging: CLOUD_LOGGING_ONLY
