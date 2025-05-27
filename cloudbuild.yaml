@@ -1,23 +1,20 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
     args:
-      [
-        "build",
-        "-t",
-        "us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend",
-        "-f",
-        "dockerfile.prod",
-        "--build-arg",
-        "NEXT_PUBLIC_BACKEND_URL",
-        "--platform=linux/amd64",
-        "."
-      ]
+      - "-c"
+      - |
+        docker build -t us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend:latest \
+        -f dockerfile.prod --platform=linux/amd64 --build-arg NEXT_PUBLIC_BACKEND_URL=$$NEXT_PUBLIC_BACKEND_URL .
+
+    secretEnv: ["NEXT_PUBLIC_BACKEND_URL"]
 
   - name: "gcr.io/cloud-builders/docker"
-    args: [
-      "push",
-      "us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend"
-    ]
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend:latest"
+      ]
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
@@ -26,13 +23,17 @@ steps:
         "run",
         "deploy",
         "snake-frontend",
-        "--image=us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend",
+        "--image=us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend:latest",
         "--region=us-central1",
         "--platform=managed",
         "--allow-unauthenticated",
-        "--clear-env-vars",  
-        "--update-secrets=NEXT_PUBLIC_BACKEND_URL=NEXT_PUBLIC_BACKEND_URL:latest"
+        "--set-env-vars=NEXT_PUBLIC_BACKEND_URL=https://snake-backend-832287900651.us-central1.run.app"
       ]
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/menuflashjdvpl/secrets/NEXT_PUBLIC_BACKEND_URL/versions/latest
+      env: "NEXT_PUBLIC_BACKEND_URL"
