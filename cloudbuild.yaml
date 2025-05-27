@@ -22,7 +22,7 @@ steps:
     args:
       - build
       - -f
-      - Dockerfile.prod
+      - dockerfile.prod
       - -t
       - us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend
       - --build-arg
