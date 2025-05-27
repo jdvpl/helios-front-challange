@@ -1,4 +1,5 @@
 steps:
+  # 1. Build the docker image con plataforma amd64
   - name: 'gcr.io/cloud-builders/docker'
     args:
       [
@@ -7,24 +8,31 @@ steps:
         'us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend',
         '-f',
         'dockerfile.prod',
-        '.',
+        '--platform=linux/amd64',
+        '.'
       ]
+
+  # 2. Push la imagen a Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       [
         'push',
-        'us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend',
+        'us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend'
       ]
+
+  # 3. Despliega en Cloud Run la imagen recién subida
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: 'bash'
     args:
-      [
-        'run', 'deploy', 'snake-frontend',
-        '--image', 'us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend',
-        '--region', 'us-central1',
-        '--platform', 'managed',
-        '--allow-unauthenticated',
-      ]
+      - '-c'
+      - |
+        gcloud run deploy snake-frontend \
+          --image=us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend \
+          --region=us-central1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --set-env-vars NEXT_PUBLIC_BACKEND_URL=https://snake-backend-832287900651.us-central1.run.app \
+          --memory=512Mi
 
 options:
   logging: CLOUD_LOGGING_ONLY
