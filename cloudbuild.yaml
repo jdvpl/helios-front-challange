@@ -30,6 +30,7 @@ steps:
         "--region=us-central1",
         "--platform=managed",
         "--allow-unauthenticated",
+        "--clear-env-vars",  
         "--update-secrets=NEXT_PUBLIC_BACKEND_URL=NEXT_PUBLIC_BACKEND_URL:latest"
       ]
 
