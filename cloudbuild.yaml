@@ -47,4 +47,4 @@ steps:
           --region us-central1 \
           --platform managed \
           --allow-unauthenticated \
-          --set-env-vars NEXT_PUBLIC_BACKEND_URL=$BACKEND_URL
+          --set-env-vars NEXT_PUBLIC_BACKEND_URL=$(cat backend.env)
