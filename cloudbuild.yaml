@@ -1,7 +1,7 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
     env:
-      - "NEXT_PUBLIC_BACKEND_URL"
+      - NEXT_PUBLIC_BACKEND_URL
     args:
       [
         "build",
@@ -37,5 +37,8 @@ steps:
       ]
 
 secrets:
-- secretEnv:
-    NEXT_PUBLIC_BACKEND_URL: NEXT_PUBLIC_BACKEND_URL
+  - secretEnv:
+      NEXT_PUBLIC_BACKEND_URL: NEXT_PUBLIC_BACKEND_URL
+
+options:
+  logging: CLOUD_LOGGING_ONLY
