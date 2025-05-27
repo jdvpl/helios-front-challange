@@ -1,50 +1,50 @@
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+
+substitutions:
+  _REGION: us-central1
+  _REPO: snake-frontend-repo
+  _SERVICE: snake-frontend
+  _IMAGE_NAME: snake-frontend
+
 steps:
   - name: gcr.io/cloud-builders/gcloud
-    id: "access-backend-url-secret"
-    entrypoint: "bash"
+    id: fetch-secret
+    entrypoint: bash
     args:
-      - "-c"
+      - -c
       - |
         echo "Fetching secret..."
-        BACKEND_URL=$(gcloud secrets versions access latest --secret=NEXT_PUBLIC_BACKEND_URL)
-        echo "BACKEND_URL=$BACKEND_URL" > backend.env
+        gcloud secrets versions access latest --secret=NEXT_PUBLIC_BACKEND_URL > backend.env
 
   - name: gcr.io/cloud-builders/docker
-    id: "build-frontend"
-    env:
-      - $(cat backend.env)
+    id: build-image
     args:
-      [
-        "build",
-        "-f",
-        "Dockerfile.prod",
-        "-t",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/snake-frontend-repo/snake-frontend",
-        "--build-arg",
-        "NEXT_PUBLIC_BACKEND_URL=$BACKEND_URL",
-        "."
-      ]
+      - build
+      - -f
+      - Dockerfile.prod
+      - -t
+      - us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend
+      - --build-arg
+      - NEXT_PUBLIC_BACKEND_URL=$(cat backend.env)
+      - .
 
   - name: gcr.io/cloud-builders/docker
-    args: [
-      "push",
-      "us-central1-docker.pkg.dev/$PROJECT_ID/snake-frontend-repo/snake-frontend"
-    ]
+    id: push-image
+    args:
+      - push
+      - us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: gcloud
+    id: deploy-service
+    entrypoint: bash
     args:
-      [
-        "run",
-        "deploy",
-        "snake-frontend",
-        "--image",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/snake-frontend-repo/snake-frontend",
-        "--region",
-        "us-central1",
-        "--platform",
-        "managed",
-        "--allow-unauthenticated",
-        "--set-env-vars",
-        "NEXT_PUBLIC_BACKEND_URL=$(gcloud secrets versions access latest --secret=NEXT_PUBLIC_BACKEND_URL)"
-      ]
+      - -c
+      - |
+        export BACKEND_URL=$(cat backend.env)
+        gcloud run deploy snake-frontend \
+          --image us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend \
+          --region us-central1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-env-vars NEXT_PUBLIC_BACKEND_URL=$BACKEND_URL
