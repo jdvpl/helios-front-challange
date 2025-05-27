@@ -1,38 +1,50 @@
 steps:
-  # 1. Build the docker image con plataforma amd64
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: gcr.io/cloud-builders/gcloud
+    id: "access-backend-url-secret"
+    entrypoint: "bash"
     args:
-      [
-        'build',
-        '-t',
-        'us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend',
-        '-f',
-        'dockerfile.prod',
-        '--platform=linux/amd64',
-        '.'
-      ]
-
-  # 2. Push la imagen a Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      [
-        'push',
-        'us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend'
-      ]
-
-  # 3. Despliega en Cloud Run la imagen recién subida
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'bash'
-    args:
-      - '-c'
+      - "-c"
       - |
-        gcloud run deploy snake-frontend \
-          --image=us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend \
-          --region=us-central1 \
-          --platform=managed \
-          --allow-unauthenticated \
-          --set-env-vars NEXT_PUBLIC_BACKEND_URL=https://snake-backend-832287900651.us-central1.run.app \
-          --memory=512Mi
+        echo "Fetching secret..."
+        BACKEND_URL=$(gcloud secrets versions access latest --secret=NEXT_PUBLIC_BACKEND_URL)
+        echo "BACKEND_URL=$BACKEND_URL" > backend.env
 
-options:
-  logging: CLOUD_LOGGING_ONLY
+  - name: gcr.io/cloud-builders/docker
+    id: "build-frontend"
+    env:
+      - $(cat backend.env)
+    args:
+      [
+        "build",
+        "-f",
+        "Dockerfile.prod",
+        "-t",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/snake-frontend-repo/snake-frontend",
+        "--build-arg",
+        "NEXT_PUBLIC_BACKEND_URL=$BACKEND_URL",
+        "."
+      ]
+
+  - name: gcr.io/cloud-builders/docker
+    args: [
+      "push",
+      "us-central1-docker.pkg.dev/$PROJECT_ID/snake-frontend-repo/snake-frontend"
+    ]
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "snake-frontend",
+        "--image",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/snake-frontend-repo/snake-frontend",
+        "--region",
+        "us-central1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+        "--set-env-vars",
+        "NEXT_PUBLIC_BACKEND_URL=$(gcloud secrets versions access latest --secret=NEXT_PUBLIC_BACKEND_URL)"
+      ]
