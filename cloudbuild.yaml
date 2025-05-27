@@ -1,12 +1,13 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    secretEnv: ["NEXT_PUBLIC_BACKEND_URL"]
+    env:
+      - NEXT_PUBLIC_BACKEND_URL
     args:
       [
         "build",
         "-t", "us-central1-docker.pkg.dev/menuflashjdvpl/snake-frontend-repo/snake-frontend",
         "-f", "dockerfile.prod",
-        "--build-arg", "NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL",
+        "--build-arg", "NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}",
         "--platform=linux/amd64",
         "."
       ]
